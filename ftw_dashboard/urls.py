@@ -6,8 +6,7 @@ from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('',
     # Examples:
-    # url(r'^$', 'ftw_dashboard.views.home', name='home'),
-    # url(r'^ftw_dashboard/', include('ftw_dashboard.foo.urls')),
+    url(r'^dashboard/', include('dashboard.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
