@@ -5,8 +5,8 @@
             var deferreds, _this = this;
             deferreds = [];
             $.each(names, function(index, name) {
-                return deferreds.push($.get('js/templates/' + name + '.hb', function(data) {
-                    console.log('loaded');
+                return deferreds.push($.get('/static/js/templates/' + name + '.hb', function(data) {
+                    console.log('Loaded template:', name);
                     return _this.templates[name] = data;
                 }));
             });
@@ -16,7 +16,7 @@
             var template;
             template = this.templates[name];
             if (!template) {
-                console.log('Template not loaded', 'Error');
+                console.log("Could not find template:", name);
             }
             return template;
         }
