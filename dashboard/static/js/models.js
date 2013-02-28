@@ -7,10 +7,6 @@
     app.models.PitchList = Backbone.Collection.extend({
         model: app.models.Pitch,
         url: '/dashboard/pitches',
-
-        initialize: function() {
-            this.fetch();
-        },
     });
 
 }).call(this);

@@ -3,7 +3,8 @@
         routes: {
             '': 'home',
             'home': 'home',
-            'pitches': 'pitches',
+            'pitches': 'pitchList',
+            'pitches/:id': 'pitchDetail',
         },
 
         initialize: function() {
@@ -17,12 +18,17 @@
             this.mainView.switchPanel('home');
         },
 
-        pitches: function() {
-            this.mainView.switchPanel('pitches');
+        pitchList: function() {
+            this.mainView.switchPanel('pitches').showList();
+        },
+
+        pitchDetail: function(id) {
+            this.mainView.switchPanel('pitches').showDetail(id);
         },
 
     });
 
+    // Load all Handlebars templates here.
     app.utils.templateLoader.load(['menu', 'home', 'pitches'], function() {
         new app.Router();
         Backbone.history.start();
