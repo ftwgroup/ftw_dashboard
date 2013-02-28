@@ -26,15 +26,25 @@
         get_context: function() {
             return {};
         },
-    }),
+    });
 
     app.views.HomePanel = app.views.Panel.extend({
         title: "Home",
-    }),
+    });
 
     app.views.PitchesPanel = app.views.Panel.extend({
         title: "Pitches",
-    }),
+
+        initialize: function(options) {
+            app.views.Panel.prototype.initialize.apply(this, arguments);
+        },
+
+        get_context: function() {
+            return {
+                pitches: this.collection.toJSON(),
+            };
+        },
+    });
 
     app.views.MainView = Backbone.View.extend({
         // The main view consists of a menu and a main panel. Each menu item
@@ -44,11 +54,11 @@
         panel_el: '#panel_holder',
         menu_el: '#menu',
 
-        initialize: function() {
+        initialize: function(options) {
             this.menu_template = Handlebars.compile(app.utils.templateLoader.get('menu'));
             this.panels = {
                 'home': new app.views.HomePanel({ name: 'home' }),
-                'pitches': new app.views.PitchesPanel({ name: 'pitches' }),
+                'pitches': new app.views.PitchesPanel({ name: 'pitches', collection: options.pitches }),
             };
             this.activePanel = this.panels['home'];
         },

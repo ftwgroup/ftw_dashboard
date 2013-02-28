@@ -1,23 +1,25 @@
 (function(){
     app.Router = Backbone.Router.extend({
         routes: {
-            '': 'goHome',
-            'home': 'goHome',
-            'pitches': 'goPitches',
+            '': 'home',
+            'home': 'home',
+            'pitches': 'pitches',
         },
 
         initialize: function() {
             this.currentPage = null;
-            this.mainView = new app.views.MainView().render();
+            this.mainView = new app.views.MainView({
+                pitches: new app.models.PitchList(),
+            }).render();
         },
 
-        goHome: function() {
+        home: function() {
             this.mainView.switchPanel('home');
         },
 
-        goPitches: function() {
+        pitches: function() {
             this.mainView.switchPanel('pitches');
-        }
+        },
 
     });
 

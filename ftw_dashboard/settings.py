@@ -6,6 +6,8 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+APPEND_SLASH = True
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
@@ -129,7 +131,8 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'dashboard'
+    'dashboard',
+    'rest_framework',
 )
 
 # A sample logging configuration. The only tangible logging
