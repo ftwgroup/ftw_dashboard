@@ -1,0 +1,9 @@
+{% extends "site_base.html" %}
+
+{% block content %}
+<p>An error occurred during authentication.</p>
+
+<p>Error code: {{ error }}</p>
+
+<p><a href="{% url 'dashboard_login' %}">Try again.</a></p>
+{% endblock content %}
