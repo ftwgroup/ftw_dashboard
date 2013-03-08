@@ -1,12 +1,16 @@
+import httplib2
 import json
 import urllib, urllib2
 
+import apiclient.discovery
 from django.conf import settings
-from django.http import Http404
-from django.shortcuts import redirect
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from oauth2client.client import OAuth2WebServerFlow
 from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from dashboard.models import Pitch
 from dashboard.serializers import PitchSerializer
@@ -42,6 +46,7 @@ def google_oauth2_callback(request):
         profile_request = urllib2.Request(GOOGLEAPIS_PROFILE + '?' + urllib.urlencode(profile_data))
         profile_response = urllib2.urlopen(profile_request).read()
         profile = json.loads(profile_response)
+        request.session['credentials'] = credentials
         request.session['access_token'] = credentials.access_token
         request.session['token_expiry'] = credentials.token_expiry
         request.session['name'] = profile['name']
@@ -66,6 +71,19 @@ def main(request, template="dashboard/main.html"):
     return TemplateResponse(request, template, context)
 
 
+class GoogleDriveListView(APIView):
+    def get(self, request, format=None):
+        credentials = request.session['credentials']
+        if not credentials:
+            raise Http404
+
+        http = credentials.authorize(httplib2.Http())
+        drive = apiclient.discovery.build('drive', 'v2', http=http)
+        data = drive.files().list().execute()
+        files = data.get('items', [])
+        return Response(files)
+
+
 class PitchListView(generics.ListCreateAPIView):
     model = Pitch
     serializer_class = PitchSerializer
@@ -73,3 +91,23 @@ class PitchListView(generics.ListCreateAPIView):
 class PitchDetailView(generics.RetrieveUpdateDestroyAPIView):
     model = Pitch
     serializer_class = PitchSerializer
+
+def import_googledrive_file(request, pk=None):
+    pitch = get_object_or_404(Pitch, pk=pk)
+    docid = request.POST.get('docid')
+    credentials = request.session['credentials']
+    if not docid or not credentials:
+        raise Http404
+
+    http = credentials.authorize(httplib2.Http())
+    drive = apiclient.discovery.build('drive', 'v2', http=http)
+    document = drive.files().get(fileId=docid).execute()
+    if "text/plain" in document.get('exportLinks', {}):
+        url = document['exportLinks']["text/plain"]
+        response, content = http.request(url)
+        if response.status == 200:
+            pitch.description = content
+            pitch.save()
+        return HttpResponse("OK")
+    else:
+        raise Http404

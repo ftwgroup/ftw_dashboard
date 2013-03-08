@@ -1,4 +1,8 @@
 (function(){
+    app.models.GoogleDrive = Backbone.Collection.extend({
+        url: '/dashboard/googledrive',
+    });
+
     app.models.Pitch = Backbone.Model.extend({
         initialize: function() {
         },

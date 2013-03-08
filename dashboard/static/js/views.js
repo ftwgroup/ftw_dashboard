@@ -61,6 +61,32 @@
         },
     });
 
+    var GoogleDriveView = app.views.TemplateView.extend({
+        template_name: 'googledrive',
+
+        initialize: function(options) {
+            app.views.TemplateView.prototype.initialize.apply(this, arguments);
+            _.bindAll(this, 'update');
+            var self = this;
+            this.drive = new app.models.GoogleDrive();
+            this.drive.fetch().done(function() {
+                console.log("Fetched Google Drive data.");
+                self.drive.on('add change remove reset', self.update);
+                self.update();
+            });
+        },
+
+        update: function() {
+            this._rendered && this.render();
+        },
+
+        context: function() {
+            return {
+                'files': this.drive.toJSON(),
+            };
+        },
+    });
+
     // An individual pitch item in a PitchListView.
     var PitchItemView = app.views.TemplateView.extend({
         template_string: '<div class="pitch-item"><a class="pitch-item-link" href="#pitches/{{id}}">{{snippet}}</a></div>',
@@ -141,15 +167,21 @@
 
     // A detail view for a single pitch.
     var PitchDetailView = app.views.TemplateView.extend({
-        template_string: '<h3 class="pitch-detail-snippet">{{snippet}}</h3><p class="pitch-detail-description">{{description}}</p>',
+        template_string: '<h3 class="pitch-detail-snippet">{{snippet}}</h3><p class="pitch-detail-description">{{description}}</p><p><a class="googledrive-open" href="javascript: void(0);">Google Drive</a></p>',
+        events: {
+            'click .googledrive-open': 'showGoogleDrive',
+            'click .googledrive-close': 'hideGoogleDrive',
+            'click .googledrive-refresh': 'refreshGoogleDrive',
+            'click .googledrive-file-import': 'importGoogleDriveFile',
+        },
 
         initialize: function() {
             app.views.TemplateView.prototype.initialize.apply(this, arguments);
-            _.bindAll(this, 'change');
-            this.model.on('change', this.change);
+            _.bindAll(this, 'update');
+            this.model.on('change', this.update);
         },
 
-        change: function() {
+        update: function() {
             this._rendered && this.render();
         },
 
@@ -161,6 +193,49 @@
                 'image': this.model.get('image'),
             };
         },
+
+        // List Google Drive files, allowing user to select a file to use for
+        // the contents of the current pitch.
+        showGoogleDrive: function(event) {
+            if (this.drive_view) {
+                this.drive_view.$el.show();
+            } else {
+                this.drive_view = new GoogleDriveView().render();
+                var $dialog = this.drive_view.$el;
+                var link_position = $(event.target).offset();
+                var link_height = $(event.target).height();
+                var dialog_offset = $dialog.offset();
+                $dialog.appendTo(this.el).offset({
+                    top: link_position.top + link_height - dialog_offset.top,
+                    left: link_position.left - dialog_offset.left,
+                });
+            }
+        },
+
+        hideGoogleDrive: function() {
+            if (this.drive_view) {
+                this.drive_view.$el.hide();
+            }
+        },
+
+        refreshGoogleDrive: function() {
+            if (this.drive_view) {
+                this.drive_view.drive.fetch();
+            }
+        },
+
+        importGoogleDriveFile: function(e) {
+            var docid = $(e.target).data('docid');
+            var url = '/dashboard/pitches/' + this.model.id + '/import/';
+            var self = this;
+            $.post(url, { docid: docid }, function(data) {
+                self.model.fetch();
+                if (self.drive) {
+                    self.drive.close();
+                    self.drive = null;
+                }
+            });
+        },
     });
 
     app.views.PitchesPanel = app.views.Panel.extend({
@@ -170,7 +245,12 @@
             app.views.Panel.prototype.initialize.apply(this, arguments);
 
             // Fetch list of pitches from the server.
-            this.collection.fetch();
+            this.fetching = this.collection.fetch();
+            var self = this;
+            this.fetching.done(function() {
+                self.fetching = null;
+                console.log("Fetch complete.");
+            });
 
             this.view_stack = [];
         },
@@ -184,6 +264,15 @@
         },
 
         showList: function() {
+            if (this.fetching) {
+                console.log("Deferring showList.");
+                var self = this;
+                this.fetching.done(function() {
+                    self.showList();
+                });
+                return this;
+            }
+
             var last = _(this.view_stack).last() || {};
             this.view_stack.push({
                 path: '#pitches',
@@ -193,6 +282,15 @@
         },
 
         showDetail: function(id) {
+            if (this.fetching) {
+                console.log("Deferring showDetail.");
+                var self = this;
+                this.fetching.done(function() {
+                    self.showDetail(id);
+                });
+                return this;
+            }
+
             var last = _(this.view_stack).last() || {};
             var pitch = this.collection.get(id);
             this.view_stack.push({
