@@ -28,20 +28,6 @@
 
     });
 
-    // Setup for Django's CSRF protection.
-    function csrfSafeMethod(method) {
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-    var csrftoken = $.cookie('csrftoken');
-    $.ajaxSetup({
-        crossDomain: false,
-        beforeSend: function(xhr, settings) {
-            if (!csrfSafeMethod(settings.type)) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
-    });
-
     // Load all Handlebars templates here.
     app.utils.templateLoader.load(['menu', 'home', 'pitches', 'googledrive'], function() {
         new app.Router();

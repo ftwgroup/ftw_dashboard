@@ -86,6 +86,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    'javascript_settings.finders.JavascriptSettingsFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -103,6 +104,10 @@ AUTHENTICATION_BACKENDS = (
     'social_auth.backends.google.GoogleOAuth2Backend',
     'django.contrib.auth.backends.ModelBackend',
 )
+
+GOOGLE_OAUTH2_WEB_API_KEY = "AIzaSyCi8M3kanOJUpcR2tNxEjIt4DiFwl5EuCU"
+GOOGLE_OAUTH2_WEB_CLIENT_ID = "715527465975-6s434s9sakel8nlmchqsmeg2bk48vfaq.apps.googleusercontent.com"
+GOOGLE_OAUTH2_WEB_CLIENT_SECRET = "z4ZkNaXthHVRvgA4gfIE3hB_"
 
 LOGIN_URL = 'dashboard_login'
 LOGIN_REDIRECT_URL = 'dashboard_main'
@@ -149,6 +154,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'dashboard',
     'rest_framework',
+    'javascript_settings',
 )
 
 # A sample logging configuration. The only tangible logging

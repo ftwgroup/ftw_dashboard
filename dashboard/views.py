@@ -60,13 +60,13 @@ def logout(request):
 
 
 def main(request, template="dashboard/main.html"):
-    if not request.session.get('access_token'):
-        return redirect('dashboard_login')
+#    if not request.session.get('access_token'):
+#        return redirect('dashboard_login')
 
     context = {
-        'access_token': request.session['access_token'],
-        'name': request.session['name'],
-        'email': request.session['email'],
+#        'access_token': request.session['access_token'],
+#        'name': request.session['name'],
+#        'email': request.session['email'],
     }
     return TemplateResponse(request, template, context)
 

@@ -2,8 +2,11 @@ Django==1.5
 Pillow==1.7.8
 South==0.7.6
 argparse==1.2.1
+django-javascript-settings==1.1.0
 djangorestframework==2.2.1
 google-api-python-client==1.0
 httplib2==0.7.7
+oauth2==1.5.211
 python-gflags==2.0
+python-openid==2.2.5
 wsgiref==0.1.2

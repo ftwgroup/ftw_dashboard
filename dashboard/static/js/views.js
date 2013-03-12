@@ -8,7 +8,7 @@
     };
 
     // Generic template view.
-    app.views.TemplateView = Backbone.View.extend({
+    var TemplateView = Backbone.View.extend({
         // One of the following should be non-empty: template_name if loading
         // the template from an external file, template_string if the template
         // is defined directly.
@@ -19,7 +19,7 @@
         context: function() {},
 
         initialize: function() {
-            _(this).bindAll('context');
+            _.bindAll(this, 'context', 'update');
             if (this.template_string) {
                 this.template = Handlebars.compile(_.result(this, 'template_string'));
             } else if (this.template_name) {
@@ -28,6 +28,12 @@
                 console.log("Error: no template defined for", this);
             }
             this._rendered = false;
+        },
+
+        // Call this whenever the view's context changes. It will re-render the
+        // view if it has already been rendered.
+        update: function() {
+            this._rendered && this.render();
         },
 
         render: function() {
@@ -39,6 +45,15 @@
 
         beforeClose: function() {
             this._rendered = false;
+        },
+    });
+
+    app.views.NavbarView = TemplateView.extend({
+        initialize: function() {
+            TemplateView.prototype.initialize.apply(this, arguments);
+        },
+
+        context: function() {
         },
     });
 
@@ -61,38 +76,78 @@
         },
     });
 
-    var GoogleDriveView = app.views.TemplateView.extend({
+    var GoogleDriveView = TemplateView.extend({
         template_name: 'googledrive',
-
-        initialize: function(options) {
-            app.views.TemplateView.prototype.initialize.apply(this, arguments);
-            _.bindAll(this, 'update');
-            var self = this;
-            this.drive = new app.models.GoogleDrive();
-            this.drive.fetch().done(function() {
-                console.log("Fetched Google Drive data.");
-                self.drive.on('add change remove reset', self.update);
-                self.update();
-            });
+        events: {
+            'click .googledrive-close': 'hide',
+            'click .googledrive-refresh': 'refresh',
+            'click .googledrive-login': 'login',
+//            'click .googledrive-new': 'newGoogleDriveDocument',
         },
 
-        update: function() {
-            this._rendered && this.render();
+        initialize: function() {
+            TemplateView.prototype.initialize.apply(this, arguments);
+            _.bindAll(this, 'checkAuth', 'handleAuthResult');
+            this.authenticated = false;
+            gapi.client.setApiKey(window.configuration.dashboard['GOOGLE_OAUTH2_WEB_API_KEY']);
+            setTimeout(this.checkAuth, 1);
+        },
+
+        checkAuth: function() {
+            gapi.auth.authorize({
+                client_id: window.configuration.dashboard['GOOGLE_OAUTH2_WEB_CLIENT_ID'],
+                scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
+                immediate: true,
+            }, this.handleAuthResult);
+        },
+
+        handleAuthResult: function(token) {
+            console.log("auth token =", token);
+            if (token && !token.error) {
+                this.authenticated = true;
+                this.drive = new app.models.GoogleDrive();
+                this.drive.on('add change remove reset', this.update);
+                this.drive.fetch().done(function() {
+                    console.log("Fetched Google Drive data.");
+                });
+            } else {
+                this.authenticated = false;
+            }
+        },
+
+        login: function() {
+            gapi.auth.authorize({
+                client_id: window.configuration.dashboard['GOOGLE_OAUTH2_WEB_CLIENT_ID'],
+                scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
+                immediate: false,
+            }, this.handleAuthResult);
+            return false;
+        },
+
+        hide: function() {
+            this.$el.hide();
+            return false;
+        },
+
+        refresh: function() {
+            this.drive && this.drive.fetch();
+            return false;
         },
 
         context: function() {
             return {
-                'files': this.drive.toJSON(),
+                'authenticated': this.authenticated,
+                'files': this.drive ? this.drive.toJSON() : [],
             };
         },
     });
 
     // An individual pitch item in a PitchListView.
-    var PitchItemView = app.views.TemplateView.extend({
+    var PitchItemView = TemplateView.extend({
         template_string: '<div class="pitch-item"><a class="pitch-item-link" href="#pitches/{{id}}">{{snippet}}</a></div>',
 
         initialize: function() {
-            app.views.TemplateView.prototype.initialize.apply(this, arguments);
+            TemplateView.prototype.initialize.apply(this, arguments);
             _.bindAll(this, 'change', 'context');
             this.model.on('change', this.change);
         },
@@ -166,23 +221,19 @@
     });
 
     // A detail view for a single pitch.
-    var PitchDetailView = app.views.TemplateView.extend({
+    var PitchDetailView = TemplateView.extend({
         template_string: '<h3 class="pitch-detail-snippet">{{snippet}}</h3><p class="pitch-detail-description">{{description}}</p><p><a class="googledrive-open" href="javascript: void(0);">Google Drive</a></p>',
         events: {
             'click .googledrive-open': 'showGoogleDrive',
-            'click .googledrive-close': 'hideGoogleDrive',
-            'click .googledrive-refresh': 'refreshGoogleDrive',
+//            'click .googledrive-close': 'hideGoogleDrive',
+//            'click .googledrive-refresh': 'refreshGoogleDrive',
+//            'click .googledrive-new': 'newGoogleDriveDocument',
             'click .googledrive-file-import': 'importGoogleDriveFile',
         },
 
         initialize: function() {
-            app.views.TemplateView.prototype.initialize.apply(this, arguments);
-            _.bindAll(this, 'update');
+            TemplateView.prototype.initialize.apply(this, arguments);
             this.model.on('change', this.update);
-        },
-
-        update: function() {
-            this._rendered && this.render();
         },
 
         context: function() {
@@ -224,6 +275,18 @@
             }
         },
 
+        newGoogleDriveDocument: function() {
+            var url = '/dashboard/pitches/' + this.model.id + '/import/';
+            var self = this;
+            $.post(url, { docid: docid }, function(data) {
+                self.model.fetch();
+                if (self.drive) {
+                    self.drive.close();
+                    self.drive = null;
+                }
+            });
+        },
+
         importGoogleDriveFile: function(e) {
             var docid = $(e.target).data('docid');
             var url = '/dashboard/pitches/' + this.model.id + '/import/';
@@ -249,7 +312,6 @@
             var self = this;
             this.fetching.done(function() {
                 self.fetching = null;
-                console.log("Fetch complete.");
             });
 
             this.view_stack = [];
@@ -265,7 +327,6 @@
 
         showList: function() {
             if (this.fetching) {
-                console.log("Deferring showList.");
                 var self = this;
                 this.fetching.done(function() {
                     self.showList();
@@ -283,7 +344,6 @@
 
         showDetail: function(id) {
             if (this.fetching) {
-                console.log("Deferring showDetail.");
                 var self = this;
                 this.fetching.done(function() {
                     self.showDetail(id);
