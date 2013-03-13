@@ -1,6 +1,8 @@
 from pycassa.system_manager import *
 from django.conf import settings
 from django.core.management.base import NoArgsCommand, BaseCommand, CommandError
+from pycassa.types import CompositeType
+
 
 class Command(BaseCommand):
 
@@ -22,9 +24,9 @@ class Command(BaseCommand):
 
         sys.create_keyspace(settings.CONTACT_KEYSPACE, SIMPLE_STRATEGY, {'replication_factor': '1'})
 
+        comparator1 = CompositeType(UTF8_TYPE, UTF8_TYPE)
         sys.create_column_family(settings.CONTACT_KEYSPACE, 'Contacts', comparator_type=UTF8_TYPE)
-        sys.create_column_family(settings.CONTACT_KEYSPACE, 'ContactsList', comparator_type=UTF8_TYPE)
-        # comparator1 = CompositeType(UTF8_TYPE, TIME_UUID_TYPE)
+        sys.create_column_family(settings.CONTACT_KEYSPACE, 'ContactsList', comparator_type=comparator1)
         # comparator2 = CompositeType(TIME_UUID_TYPE, DATE_TYPE)
         sys.create_column_family(settings.CONTACT_KEYSPACE, 'Emails', comparator_type=UTF8_TYPE)
 
