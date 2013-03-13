@@ -1,27 +1,49 @@
 (function(){
     app.Router = Backbone.Router.extend({
         routes: {
-            '': 'goHome',
-            'home': 'goHome',
-            'pitches': 'goPitches',
+            '': 'home',
+            'home': 'home',
+            'pitches': 'pitchList',
+            'pitches/:id': 'pitchDetail',
         },
 
         initialize: function() {
             this.currentPage = null;
-            this.mainView = new app.views.MainView().render();
+            this.mainView = new app.views.MainView({
+                pitches: new app.models.PitchList(),
+            }).render();
         },
 
-        goHome: function() {
+        home: function() {
             this.mainView.switchPanel('home');
         },
 
-        goPitches: function() {
-            this.mainView.switchPanel('pitches');
-        }
+        pitchList: function() {
+            this.mainView.switchPanel('pitches').showList();
+        },
+
+        pitchDetail: function(id) {
+            this.mainView.switchPanel('pitches').showDetail(id);
+        },
 
     });
 
-    app.utils.templateLoader.load(['menu', 'home', 'pitches'], function() {
+    // Setup for Django's CSRF protection.
+    function csrfSafeMethod(method) {
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    var csrftoken = $.cookie('csrftoken');
+    $.ajaxSetup({
+        crossDomain: false,
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type)) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
+    // Load all Handlebars templates here.
+    app.utils.templateLoader.load(['menu', 'home', 'pitches', 'googledrive'], function() {
         new app.Router();
         Backbone.history.start();
     });

@@ -31,3 +31,41 @@
 .panel-button {
     width: 100%;
 }
+
+.pitch-item {
+    padding: 5px 0;
+    background-color: #0ff;
+    font-weight: bold;
+}
+
+.googledrive {
+    position: absolute;
+    width: 400px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid black;
+    border-radius: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &-file {
+        margin: 3px 0;
+    }
+    &-close, &-refresh, &-file-import {
+        font-weight: bold;
+        cursor: pointer;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+    &-refresh {
+        color: #383;
+    }
+    &-close {
+        color: #833;
+    }
+    &-file-import {
+        color: #338;
+    }
+}
