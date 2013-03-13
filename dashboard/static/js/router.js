@@ -3,6 +3,8 @@
         routes: {
             '': 'home',
             'home': 'home',
+            'contacts': 'contactList',
+            'contacts/:id': 'contactDetail',
             'pitches': 'pitchList',
             'pitches/:id': 'pitchDetail',
         },
@@ -11,11 +13,20 @@
             this.currentPage = null;
             this.mainView = new app.views.MainView({
                 pitches: new app.models.PitchList(),
+                contacts: new app.models.ContactList()
             }).render();
         },
 
         home: function() {
             this.mainView.switchPanel('home');
+        },
+
+        contactList: function() {
+            this.mainView.switchPanel('contacts').showList();
+        },
+
+        contactDetail: function(id) {
+            this.mainView.switchPanel('contacts').showDetail(id);
         },
 
         pitchList: function() {
