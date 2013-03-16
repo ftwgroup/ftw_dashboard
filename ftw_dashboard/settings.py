@@ -137,10 +137,17 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+    'contacts',
     'dashboard',
     'rest_framework',
     'javascript_settings',
 )
+
+# Cassandra configuration
+CASSANDRA_HOST = '127.0.0.1'
+CONTACT_KEYSPACE = 'Contact'
+CASSANDRA_NODE_LIST = ['127.0.0.1:9160']
+
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

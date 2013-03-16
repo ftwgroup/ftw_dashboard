@@ -51,4 +51,19 @@
         url: '/dashboard/pitches',
     });
 
+    app.models.Contact = Backbone.Model.extend({
+        initialize: function() {
+        },
+        parse: function(response) {
+            response['id'] = response.uid;
+            console.log('response', response);
+            return response
+        }
+    });
+
+    app.models.ContactList = Backbone.Collection.extend({
+        model: app.models.Contact,
+        url: '/contacts'
+    });
+
 }).call(this);

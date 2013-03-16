@@ -165,6 +165,105 @@
         },
     });
 
+    var ContactItemView = app.views.TemplateView.extend({
+        template_string: '<div class="contact-item"><a class="contact-item-link" href="#contacts/{{id}}">{{first_name}} {{last_name}}</a></div>',
+
+        initialize: function() {
+            app.views.TemplateView.prototype.initialize.apply(this, arguments);
+            _.bindAll(this, 'change', 'context');
+            this.model.on('change', this.change);
+        },
+
+        change: function() {
+            this._rendered && this.render();
+        },
+
+        context: function() {
+            return {
+                'id': this.model.get('uid'),
+                'first_name': this.model.get('first_name'),
+                'last_name': this.model.get('last_name')
+            };
+        },
+    });
+
+    var ContactListView = Backbone.View.extend({
+         initialize: function() {
+            this._item_views = [];
+            this._rendered = false;
+            _.bindAll(this, 'add', 'remove', 'reset');
+            this.collection.on('add', this.add);
+            this.collection.on('remove', this.remove);
+            this.collection.on('reset', this.reset);
+            this.reset();
+        },
+
+        add: function(contact) {
+            var view = new PitchItemView({ model: contact });
+            this._item_views.push(view);
+
+            if (this._rendered) {
+                this.$el.append(view.render().el);
+            }
+        },
+
+        remove: function(contact) {
+            var dead_view = _(this._item_views).select(function(view) {
+                return view.model === contact;
+            })[0];
+            if (dead_view) {
+                this._item_views = _(this._item_views).without(dead_view);
+                if (this._rendered) {
+                    dead_view.$el.remove();
+                }
+                dead_view.close();
+            }
+        },
+
+        reset: function() {
+            this._item_views = [];
+            var self = this;
+            this.collection.each(function(contact) {
+                var view = new ContactItemView({ model: contact });
+                self._item_views.push(view);
+            });
+
+            this._rendered && this.render();
+        },
+
+        render: function() {
+            this.$el.empty();
+            var self = this;
+            _(this._item_views).each(function(view) {
+                self.$el.append(view.render().el);
+            });
+            this._rendered = true;
+            return this;
+        },
+    });
+
+    var ContactDetailView = app.views.TemplateView.extend({
+        template_string: '<h3 class="contact-detail-snippet">{{first_name}} {{Last_name}}</h3><p class="contact-detail-description">This is where detailed info would go</p><p><a class="googledrive-open" href="javascript: void(0);">Google Drive</a></p>',
+        initialize: function() {
+            app.views.TemplateView.prototype.initialize.apply(this, arguments);
+            _.bindAll(this, 'update');
+            this.model.on('change', this.update);
+        },
+
+        update: function() {
+            this._rendered && this.render();
+        },
+
+        context: function() {
+            return {
+                'uid': this.model.get('uid'),
+                'snippet': this.model.get('first_name'),
+                'description': this.model.get('last_name'),
+                //'image': this.model.get('image'),
+            };
+        },
+    });
+
     // An individual pitch item in a PitchListView.
     var PitchItemView = TemplateView.extend({
         template_string: '<div class="pitch-item"><a class="pitch-item-link" href="#pitches/{{id}}">{{snippet}}</a></div>',
@@ -360,8 +459,10 @@
         initialize: function(options) {
             this.menu_template = Handlebars.compile(app.utils.templateLoader.get('menu'));
             this.panels = {
+                // TODO I need to abstract this further so it takes a panel View
                 'home': new app.views.HomePanel({ name: 'home' }),
                 'pitches': new app.views.PitchesPanel({ name: 'pitches', collection: options.pitches }),
+                'contacts': new app.views.ContactsPanel({ name: 'contacts', collection: options.contacts })
             };
             this.activePanel = this.panels['home'];
         },
@@ -393,6 +494,69 @@
                 this.render();
             }
             return this.activePanel;
+        }
+    });
+
+    app.views.ContactsPanel = app.views.Panel.extend({
+        title: "Contacts",
+
+        initialize: function(options) {
+            app.views.Panel.prototype.initialize.apply(this, arguments);
+
+            // Fetch list of pitches from the server
+            this.fetching = this.collection.fetch();
+            var self = this;
+            this.fetching.done(function() {
+                self.fetching = null;
+                console.log("Fetch complete")
+            });
+
+            this.view_stack = [];
+        },
+
+        render: function() {
+            var active = _(this.view_stack).last();
+            if (active) {
+                this.$el.html(active.view.render().el);
+            }
+            return this;
+        },
+
+        showList: function() {
+            if (this.fetching) {
+                console.log("Deferring showList.");
+                var self = this;
+                this.fetching.done(function() {
+                    self.showList();
+                });
+                return this;
+            }
+
+            var last = _(this.view_stack).last() || {};
+            this.view_stack.push({
+                path: '#contacts',
+                view: new ContactListView({collection: this.collection, back: last.path}),
+            });
+            return this.render();
+        },
+
+        showDetail: function(id) {
+             if (this.fetching) {
+                console.log("Deferring showDetail.");
+                var self = this;
+                this.fetching.done(function() {
+                    self.showDetail(id);
+                });
+                return this;
+            }
+
+            var last = _(this.view_stack).last() || {};
+            var contact = this.collection.get(id);
+            this.view_stack.push({
+                path: '#contacts/' + id,
+                view: new ContactDetailView({ model: contact, back: last.path }),
+            });
+            return this.render();
         }
     });
 }).call(this);
