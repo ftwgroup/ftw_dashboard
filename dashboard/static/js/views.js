@@ -117,6 +117,7 @@
             } else {
                 this.authenticated = false;
             }
+            this.update();
         },
 
         login: function() {
@@ -125,6 +126,7 @@
                 scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
                 immediate: false,
             }, this.handleAuthResult);
+            this.update();
             return false;
         },
 
@@ -158,6 +160,7 @@
             return {
                 'authenticated': this.authenticated,
                 'files': this.drive ? this.drive.toJSON() : [],
+                'fetching': this.drive && this.drive.fetching,
             };
         },
     });
