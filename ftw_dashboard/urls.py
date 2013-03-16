@@ -5,7 +5,6 @@ from django.conf.urls import patterns, include, url
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Examples:
     url(r'^dashboard/', include('dashboard.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:

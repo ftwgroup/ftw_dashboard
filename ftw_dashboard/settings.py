@@ -92,25 +92,10 @@ STATICFILES_FINDERS = (
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '07jllell4p0jzzdioq95_gz(g87$@(u%251n2%-ntkobyj)r%#'
 
-#AUTH_USER_MODEL = 'dashboard.DashboardUser'
-
 # Google OAuth2 client information.
-GOOGLE_OAUTH2_CLIENT_ID = "715527465975.apps.googleusercontent.com"
-GOOGLE_OAUTH2_CLIENT_SECRET = "_j__iC4F31Jp_89suxYW2DXg"
-GOOGLE_OAUTH2_ENDPOINT = "https://accounts.google.com/o/oauth2"
-GOOGLE_OAUTH2_REDIRECT_URI = "http://localhost:8000/dashboard/google_oauth2/"
-
-AUTHENTICATION_BACKENDS = (
-    'social_auth.backends.google.GoogleOAuth2Backend',
-    'django.contrib.auth.backends.ModelBackend',
-)
-
-GOOGLE_OAUTH2_WEB_API_KEY = "AIzaSyCi8M3kanOJUpcR2tNxEjIt4DiFwl5EuCU"
-GOOGLE_OAUTH2_WEB_CLIENT_ID = "715527465975-6s434s9sakel8nlmchqsmeg2bk48vfaq.apps.googleusercontent.com"
-GOOGLE_OAUTH2_WEB_CLIENT_SECRET = "z4ZkNaXthHVRvgA4gfIE3hB_"
-
-LOGIN_URL = 'dashboard_login'
-LOGIN_REDIRECT_URL = 'dashboard_main'
+GOOGLE_OAUTH2_API_KEY = "AIzaSyCi8M3kanOJUpcR2tNxEjIt4DiFwl5EuCU"
+GOOGLE_OAUTH2_CLIENT_ID = "715527465975-6s434s9sakel8nlmchqsmeg2bk48vfaq.apps.googleusercontent.com"
+GOOGLE_OAUTH2_CLIENT_SECRET = "z4ZkNaXthHVRvgA4gfIE3hB_"
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

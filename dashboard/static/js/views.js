@@ -78,6 +78,7 @@
 
     var GoogleDriveView = TemplateView.extend({
         template_name: 'googledrive',
+        className: 'googledrive',
         events: {
             'click .googledrive-close': 'hide',
             'click .googledrive-refresh': 'refresh',
@@ -89,13 +90,13 @@
             TemplateView.prototype.initialize.apply(this, arguments);
             _.bindAll(this, 'checkAuth', 'handleAuthResult');
             this.authenticated = false;
-            gapi.client.setApiKey(window.configuration.dashboard['GOOGLE_OAUTH2_WEB_API_KEY']);
+            gapi.client.setApiKey(window.configuration.dashboard['GOOGLE_OAUTH2_API_KEY']);
             setTimeout(this.checkAuth, 1);
         },
 
         checkAuth: function() {
             gapi.auth.authorize({
-                client_id: window.configuration.dashboard['GOOGLE_OAUTH2_WEB_CLIENT_ID'],
+                client_id: window.configuration.dashboard['GOOGLE_OAUTH2_CLIENT_ID'],
                 scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
                 immediate: true,
             }, this.handleAuthResult);
@@ -107,9 +108,12 @@
                 this.authenticated = true;
                 this.drive = new app.models.GoogleDrive();
                 this.drive.on('add change remove reset', this.update);
-                this.drive.fetch().done(function() {
-                    console.log("Fetched Google Drive data.");
+                this.drive.fetch();
+                this.google_auth = new app.models.GoogleAuthCredentials({
+                    access_token: token.access_token,
+                    expires_at: token.expires_at,
                 });
+                this.google_auth.save();
             } else {
                 this.authenticated = false;
             }
@@ -117,10 +121,15 @@
 
         login: function() {
             gapi.auth.authorize({
-                client_id: window.configuration.dashboard['GOOGLE_OAUTH2_WEB_CLIENT_ID'],
+                client_id: window.configuration.dashboard['GOOGLE_OAUTH2_CLIENT_ID'],
                 scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
                 immediate: false,
             }, this.handleAuthResult);
+            return false;
+        },
+
+        show: function() {
+            this.$el.show();
             return false;
         },
 
@@ -132,6 +141,17 @@
         refresh: function() {
             this.drive && this.drive.fetch();
             return false;
+        },
+
+        position: function(target) {
+            var link_position = $(target).offset();
+            var link_height = $(target).height();
+            var dialog_offset = this.$el.offset();
+            this.$el.offset({
+                top: link_position.top + link_height - dialog_offset.top,
+                left: link_position.left - dialog_offset.left,
+            });
+            return this;
         },
 
         context: function() {
@@ -224,10 +244,7 @@
     var PitchDetailView = TemplateView.extend({
         template_string: '<h3 class="pitch-detail-snippet">{{snippet}}</h3><p class="pitch-detail-description">{{description}}</p><p><a class="googledrive-open" href="javascript: void(0);">Google Drive</a></p>',
         events: {
-            'click .googledrive-open': 'showGoogleDrive',
-//            'click .googledrive-close': 'hideGoogleDrive',
-//            'click .googledrive-refresh': 'refreshGoogleDrive',
-//            'click .googledrive-new': 'newGoogleDriveDocument',
+            'click .googledrive-open': 'openGoogleDrive',
             'click .googledrive-file-import': 'importGoogleDriveFile',
         },
 
@@ -247,44 +264,13 @@
 
         // List Google Drive files, allowing user to select a file to use for
         // the contents of the current pitch.
-        showGoogleDrive: function(event) {
+        openGoogleDrive: function(event) {
             if (this.drive_view) {
-                this.drive_view.$el.show();
+                this.drive_view.show();
             } else {
-                this.drive_view = new GoogleDriveView().render();
-                var $dialog = this.drive_view.$el;
-                var link_position = $(event.target).offset();
-                var link_height = $(event.target).height();
-                var dialog_offset = $dialog.offset();
-                $dialog.appendTo(this.el).offset({
-                    top: link_position.top + link_height - dialog_offset.top,
-                    left: link_position.left - dialog_offset.left,
-                });
+                this.drive_view = new GoogleDriveView().render().position(event.target);
+                this.$el.append(this.drive_view.el);
             }
-        },
-
-        hideGoogleDrive: function() {
-            if (this.drive_view) {
-                this.drive_view.$el.hide();
-            }
-        },
-
-        refreshGoogleDrive: function() {
-            if (this.drive_view) {
-                this.drive_view.drive.fetch();
-            }
-        },
-
-        newGoogleDriveDocument: function() {
-            var url = '/dashboard/pitches/' + this.model.id + '/import/';
-            var self = this;
-            $.post(url, { docid: docid }, function(data) {
-                self.model.fetch();
-                if (self.drive) {
-                    self.drive.close();
-                    self.drive = null;
-                }
-            });
         },
 
         importGoogleDriveFile: function(e) {
@@ -293,9 +279,8 @@
             var self = this;
             $.post(url, { docid: docid }, function(data) {
                 self.model.fetch();
-                if (self.drive) {
-                    self.drive.close();
-                    self.drive = null;
+                if (self.drive_view) {
+                    self.drive_view.hide();
                 }
             });
         },
