@@ -165,7 +165,7 @@
         },
     });
 
-    var ContactItemView = app.views.TemplateView.extend({
+    var ContactItemView = TemplateView.extend({
         template_string: '<div class="contact-item"><a class="contact-item-link" href="#contacts/{{id}}">{{first_name}} {{last_name}}</a></div>',
 
         initialize: function() {
@@ -242,10 +242,10 @@
         },
     });
 
-    var ContactDetailView = app.views.TemplateView.extend({
+    var ContactDetailView = TemplateView.extend({
         template_string: '<h3 class="contact-detail-snippet">{{first_name}} {{Last_name}}</h3><p class="contact-detail-description">This is where detailed info would go</p><p><a class="googledrive-open" href="javascript: void(0);">Google Drive</a></p>',
         initialize: function() {
-            app.views.TemplateView.prototype.initialize.apply(this, arguments);
+            TemplateView.prototype.initialize.apply(this, arguments);
             _.bindAll(this, 'update');
             this.model.on('change', this.update);
         },
